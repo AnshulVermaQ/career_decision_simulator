@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Decision Simulator - 12-Week Job Search Engine</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Font Awesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+
+    /* Range Slider Custom Styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: #8b5cf6;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(139, 92, 246, 0.7);
+      margin-top: -7px;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      background: #a78bfa;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      cursor: pointer;
+      background: #334155;
+      border-radius: 4px;
+    }
+    .light input[type=range]::-webkit-slider-runnable-track {
+      background: #cbd5e1;
+    }
+
+    /* Warning Pulse Animation */
+    @keyframes pulseAlert {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.88; transform: scale(0.995); }
+    }
+    .pulse-warning {
+      animation: pulseAlert 2s infinite ease-in-out;
+    }
+
+    /* Strategy Card Selection Ring */
+    .strategy-card-selected {
+      border-color: #8b5cf6 !important;
+      background-color: rgba(139, 92, 246, 0.12) !important;
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+    }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen transition-colors duration-300 font-sans light:bg-slate-50 light:text-slate-900 selection:bg-purple-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 light:bg-white/90 backdrop-blur-md border-b border-slate-800 light:border-slate-200 px-4 lg:px-8 py-3.5 transition-colors">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+          <i class="fa-solid fa-chart-pie text-xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-extrabold bg-gradient-to-r from-purple-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent light:from-purple-700 light:to-cyan-700">
+              Career Decision Simulator
+            </h1>
+            <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 light:text-purple-700 border border-purple-500/30">
+              12-Week Search Model
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 light:text-slate-600">Simulate weekly time allocation & project 3-month career outcomes</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions & Theme Switcher -->
+      <div class="flex items-center space-x-2.5 flex-wrap">
+        <button id="btn-theme-toggle" class="p-2.5 rounded-xl bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 light:text-slate-700 text-xs font-medium transition flex items-center gap-2 border border-slate-700 light:border-slate-300" title="Toggle Theme">
+          <i class="fa-solid fa-moon text-purple-400 dark:inline hidden"></i>
+          <i class="fa-solid fa-sun text-amber-500 dark:hidden inline"></i>
+          <span class="hidden sm:inline">Theme</span>
+        </button>
+
+        <button id="btn-reset" class="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 light:text-rose-600 text-xs font-semibold border border-rose-500/30 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Reset Allocation</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Top KPI Metrics Bar (12-Week Projections) -->
+  <section class="bg-slate-900/60 light:bg-slate-100/80 border-b border-slate-800/80 light:border-slate-200 py-3.5 px-4 lg:px-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-3">
+      
+      <!-- KPI 1: Weekly Hours Budget -->
+      <div class="bg-slate-800/80 light:bg-white p-3 rounded-xl border border-slate-700/60 light:border-slate-200 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-slate-400 light:text-slate-500 mb-1">
+          <span>Weekly Time Budget</span>
+          <i class="fa-solid fa-clock text-purple-400"></i>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <span id="kpi-hours-val" class="text-lg font-extrabold text-slate-100 light:text-slate-800">40 / 40h</span>
+          <span id="kpi-hours-badge" class="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-emerald-500/20 text-emerald-400">100% Used</span>
+        </div>
+        <div class="w-full bg-slate-700 light:bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div id="kpi-hours-bar" class="bg-purple-500 h-full transition-all duration-300" style="width: 100%"></div>
+        </div>
+      </div>
+
+      <!-- KPI 2: Technical Preparation Progress -->
+      <div class="bg-slate-800/80 light:bg-white p-3 rounded-xl border border-slate-700/60 light:border-slate-200 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-slate-400 light:text-slate-500 mb-1">
+          <span>Tech Prep Progress</span>
+          <i class="fa-solid fa-code text-cyan-400"></i>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <span id="kpi-dsa-score" class="text-lg font-extrabold text-cyan-400 light:text-cyan-600">0%</span>
+          <span id="kpi-dsa-hrs-total" class="text-[10px] font-mono text-slate-400">0h total</span>
+        </div>
+        <div class="w-full bg-slate-700 light:bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div id="kpi-dsa-bar" class="bg-cyan-400 h-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- KPI 3: Portfolio Progress -->
+      <div class="bg-slate-800/80 light:bg-white p-3 rounded-xl border border-slate-700/60 light:border-slate-200 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-slate-400 light:text-slate-500 mb-1">
+          <span>Portfolio Progress</span>
+          <i class="fa-solid fa-cubes text-emerald-400"></i>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <span id="kpi-portfolio-score" class="text-lg font-extrabold text-emerald-400 light:text-emerald-600">0%</span>
+          <span id="kpi-portfolio-hrs-total" class="text-[10px] font-mono text-slate-400">0h total</span>
+        </div>
+        <div class="w-full bg-slate-700 light:bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div id="kpi-portfolio-bar" class="bg-emerald-400 h-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- KPI 4: High-Quality Opportunities -->
+      <div class="bg-slate-800/80 light:bg-white p-3 rounded-xl border border-slate-700/60 light:border-slate-200 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-slate-400 light:text-slate-500 mb-1">
+          <span>12-Wk Quality Opportunities</span>
+          <i class="fa-solid fa-paper-plane text-amber-400"></i>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <span id="kpi-opps-val" class="text-lg font-extrabold text-amber-400 light:text-amber-600">0 leads</span>
+          <span id="kpi-opps-rate" class="text-[10px] text-slate-400">~0 / wk</span>
+        </div>
+        <p class="text-[10px] text-slate-400 light:text-slate-500 mt-1 truncate" id="kpi-opps-sub">Targeted & Referred</p>
+      </div>
+
+      <!-- KPI 5: Strategy Fit & Balance -->
+      <div class="col-span-2 md:col-span-1 bg-slate-800/80 light:bg-white p-3 rounded-xl border border-slate-700/60 light:border-slate-200 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-slate-400 light:text-slate-500 mb-1">
+          <span>Strategy Alignment</span>
+          <i class="fa-solid fa-bullseye text-purple-400"></i>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <span id="kpi-balance-val" class="text-base font-bold text-slate-100 light:text-slate-800">Balanced</span>
+          <span id="kpi-balance-score" class="text-[10px] font-mono text-purple-400 light:text-purple-600 font-bold">100%</span>
+        </div>
+        <div class="w-full bg-slate-700 light:bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div id="kpi-balance-bar" class="bg-purple-500 h-full transition-all duration-300" style="width: 100%"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6">
+
+    <!-- Over-Allocation Warning Banner -->
+    <div id="overallocation-banner" class="hidden bg-rose-500/10 border-2 border-rose-500/80 text-rose-300 light:text-rose-700 p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-rose-500/10 pulse-warning">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center shrink-0">
+          <i class="fa-solid fa-triangle-exclamation text-rose-400 text-xl"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-rose-200 light:text-rose-900">Over-Capacity Warning!</h4>
+          <p class="text-xs text-rose-300/90 light:text-rose-700" id="overallocation-msg">You have allocated more than the available 40 hours per week! Adjust your sliders to avoid burnout and maintain realistic progress.</p>
+        </div>
+      </div>
+      <button onclick="autoBalanceHours()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow transition shrink-0 ml-2">
+        Auto-Balance to 40h
+      </button>
+    </div>
+
+    <!-- 2-Column Responsive Dashboard Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- LEFT COLUMN: Controls, Strategy Selector & Quick Presets (5 cols on lg) -->
+      <section class="lg:col-span-5 space-y-6">
+
+        <!-- Target Strategy Selector Card -->
+        <div class="bg-slate-900/90 light:bg-white p-5 rounded-2xl border border-slate-800 light:border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 light:border-slate-200 pb-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 light:text-slate-500 flex items-center gap-2">
+              <i class="fa-solid fa-crosshair text-purple-400"></i>
+              <span>Target Career Strategy</span>
+            </h3>
+            <span class="text-[10px] text-purple-400 light:text-purple-600 font-mono bg-purple-500/10 px-2 py-0.5 rounded">Changes Multipliers</span>
+          </div>
+
+          <div class="grid grid-cols-1 gap-2.5">
+            
+            <!-- Strategy Option 1: Startup / Product -->
+            <button onclick="setStrategy('startup')" id="strat-btn-startup" class="strategy-card p-3 rounded-xl border border-slate-700 light:border-slate-200 bg-slate-800/40 light:bg-slate-50 hover:border-purple-500/60 text-left transition relative group">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-200 light:text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-rocket text-cyan-400"></i> Startup / Product Company
+                </span>
+                <span class="text-[10px] bg-cyan-500/20 text-cyan-300 light:text-cyan-800 px-1.5 py-0.5 rounded font-mono">High Portfolio Weight</span>
+              </div>
+              <p class="text-[11px] text-slate-400 light:text-slate-600 leading-snug">
+                Emphasizes production-ready skills, full-stack building, and shipping functional apps. Less focus on LeetCode.
+              </p>
+              <div class="mt-2 text-[10px] font-mono text-slate-500 flex gap-3">
+                <span>DSA: 20%</span>
+                <span>Portfolio: 50%</span>
+                <span>Apps/Net: 30%</span>
+              </div>
+            </button>
+
+            <!-- Strategy Option 2: Big Tech / DSA-focused -->
+            <button onclick="setStrategy('bigtech')" id="strat-btn-bigtech" class="strategy-card p-3 rounded-xl border border-slate-700 light:border-slate-200 bg-slate-800/40 light:bg-slate-50 hover:border-purple-500/60 text-left transition relative group">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-200 light:text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-building-columns text-emerald-400"></i> Big Tech / DSA-Focused
+                </span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 light:text-emerald-800 px-1.5 py-0.5 rounded font-mono">High DSA Weight</span>
+              </div>
+              <p class="text-[11px] text-slate-400 light:text-slate-600 leading-snug">
+                Prioritizes Data Structures, Algorithms, and System Design to clear Online Assessments and live technical screens.
+              </p>
+              <div class="mt-2 text-[10px] font-mono text-slate-500 flex gap-3">
+                <span>DSA: 50%</span>
+                <span>Portfolio: 20%</span>
+                <span>Apps/Net: 30%</span>
+              </div>
+            </button>
+
+            <!-- Strategy Option 3: General Job Search -->
+            <button onclick="setStrategy('general')" id="strat-btn-general" class="strategy-card p-3 rounded-xl border border-slate-700 light:border-slate-200 bg-slate-800/40 light:bg-slate-50 hover:border-purple-500/60 text-left transition relative group">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-200 light:text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-scale-balanced text-amber-400"></i> General Job Search
+                </span>
+                <span class="text-[10px] bg-amber-500/20 text-amber-300 light:text-amber-800 px-1.5 py-0.5 rounded font-mono">Equalized Split</span>
+              </div>
+              <p class="text-[11px] text-slate-400 light:text-slate-600 leading-snug">
+                Balanced time split across mid-size companies, agencies, and enterprise roles. Moderate DSA & Portfolio focus.
+              </p>
+              <div class="mt-2 text-[10px] font-mono text-slate-500 flex gap-3">
+                <span>DSA: 33%</span>
+                <span>Portfolio: 33%</span>
+                <span>Apps/Net: 34%</span>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Time Allocation Controls (3 Main Sliders) -->
+        <div class="bg-slate-900/90 light:bg-white p-5 rounded-2xl border border-slate-800 light:border-slate-200 shadow-sm space-y-5">
+          
+          <div class="flex items-center justify-between border-b border-slate-800 light:border-slate-200 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-100 light:text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-purple-400"></i>
+                <span>Weekly Time Allocation</span>
+              </h3>
+              <p class="text-[11px] text-slate-400 light:text-slate-500">Distribute your 40 available weekly hours</p>
+            </div>
+            <span id="total-allocated-pill" class="text-xs font-mono font-bold text-purple-400 light:text-purple-600 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/20">
+              40 / 40 hrs
+            </span>
+          </div>
+
+          <!-- Slider 1: DSA & Core Fundamentals -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <label for="slider-dsa" class="font-semibold text-slate-200 light:text-slate-800 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"></span>
+                DSA & Core Fundamentals
+              </label>
+              <span id="val-dsa" class="font-bold font-mono text-cyan-400 light:text-cyan-600 text-sm">12 hrs/wk</span>
+            </div>
+            <input type="range" id="slider-dsa" min="0" max="40" value="12" step="1" class="w-full">
+            <div class="flex justify-between text-[10px] text-slate-500">
+              <span>0 hrs</span>
+              <span id="dsa-12wk-sub" class="text-cyan-400/80 font-mono">144h total in 12 wks</span>
+              <span>40 hrs</span>
+            </div>
+          </div>
+
+          <!-- Slider 2: Portfolio & Practical Skills -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between items-center text-xs">
+              <label for="slider-portfolio" class="font-semibold text-slate-200 light:text-slate-800 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
+                Portfolio & Practical Skills
+              </label>
+              <span id="val-portfolio" class="font-bold font-mono text-emerald-400 light:text-emerald-600 text-sm">16 hrs/wk</span>
+            </div>
+            <input type="range" id="slider-portfolio" min="0" max="40" value="16" step="1" class="w-full">
+            <div class="flex justify-between text-[10px] text-slate-500">
+              <span>0 hrs</span>
+              <span id="portfolio-12wk-sub" class="text-emerald-400/80 font-mono">192h total in 12 wks</span>
+              <span>40 hrs</span>
+            </div>
+          </div>
+
+          <!-- Slider 3: Targeted Applications & Referral/Networking -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between items-center text-xs">
+              <label for="slider-apps" class="font-semibold text-slate-200 light:text-slate-800 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+                Targeted Apps & Networking
+              </label>
+              <span id="val-apps" class="font-bold font-mono text-amber-400 light:text-amber-600 text-sm">12 hrs/wk</span>
+            </div>
+            <input type="range" id="slider-apps" min="0" max="40" value="12" step="1" class="w-full">
+            <div class="flex justify-between text-[10px] text-slate-500">
+              <span>0 hrs</span>
+              <span id="apps-12wk-sub" class="text-amber-400/80 font-mono">144h total in 12 wks</span>
+              <span>40 hrs</span>
+            </div>
+          </div>
+
+          <!-- Smart Lock Checkbox -->
+          <div class="pt-2 border-t border-slate-800/80 light:border-slate-200 flex items-center justify-between text-xs">
+            <span class="text-slate-400 light:text-slate-600 flex items-center gap-1.5">
+              <i class="fa-solid fa-lock text-purple-400"></i> Auto-Cap Weekly Sum to 40 Hours
+            </span>
+            <input type="checkbox" id="toggle-autocap" checked class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 bg-slate-700 border-slate-600">
+          </div>
+
+        </div>
+
+        <!-- What-If Simulation Quick Action Buttons -->
+        <div class="bg-slate-900/90 light:bg-white p-4.5 rounded-2xl border border-slate-800 light:border-slate-200 shadow-sm space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 light:text-slate-500 flex items-center justify-between">
+            <span>What-If Quick Actions</span>
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+          </h3>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button onclick="whatIfAlignStrategy()" class="p-2.5 rounded-xl bg-slate-800/60 light:bg-slate-100 hover:bg-purple-500/20 text-slate-200 light:text-slate-800 text-left border border-slate-700/60 light:border-slate-200 transition">
+              <i class="fa-solid fa-bullseye text-purple-400 mr-1"></i> Align to Strategy Optimal
+            </button>
+            <button onclick="whatIfEqualSplit()" class="p-2.5 rounded-xl bg-slate-800/60 light:bg-slate-100 hover:bg-purple-500/20 text-slate-200 light:text-slate-800 text-left border border-slate-700/60 light:border-slate-200 transition">
+              <i class="fa-solid fa-scale-balanced text-amber-400 mr-1"></i> Equal 3-Way Split (13.3h)
+            </button>
+            <button onclick="whatIfDSAHeavy()" class="p-2.5 rounded-xl bg-slate-800/60 light:bg-slate-100 hover:bg-purple-500/20 text-slate-200 light:text-slate-800 text-left border border-slate-700/60 light:border-slate-200 transition">
+              <i class="fa-solid fa-code text-cyan-400 mr-1"></i> Heavy DSA Sprint (24h)
+            </button>
+            <button onclick="whatIfPortfolioHeavy()" class="p-2.5 rounded-xl bg-slate-800/60 light:bg-slate-100 hover:bg-purple-500/20 text-slate-200 light:text-slate-800 text-left border border-slate-700/60 light:border-slate-200 transition">
+              <i class="fa-solid fa-layer-group text-emerald-400 mr-1"></i> Build Flagship Project
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved Scenarios Side-by-Side Comparison Container -->
+        <div class="bg-slate-900/90 light:bg-white p-4.5 rounded-2xl border border-slate-800 light:border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 light:border-slate-200 pb-2.5">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 light:text-slate-500 flex items-center gap-1.5">
+                <i class="fa-solid fa-bookmark text-purple-400"></i>
+                <span>Scenario Comparison</span>
+              </h3>
+            </div>
+            <button onclick="saveCurrentScenario()" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-semibold rounded-lg shadow transition flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i>
+              <span>Save Current</span>
+            </button>
+          </div>
+
+          <div id="scenarios-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div class="col-span-full py-4 text-center text-xs text-slate-500 border-2 border-dashed border-slate-800 light:border-slate-200 rounded-xl">
+              Save up to 3 scenarios to compare your 12-week outcomes side-by-side.
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: Real-Time Charts, Trade-Off Analysis & Decision Snapshot (7 cols on lg) -->
+      <section class="lg:col-span-7 space-y-6">
+
+        <!-- Visual Analytics Grid -->
+        <div class="bg-slate-900/90 light:bg-white p-5 rounded-2xl border border-slate-800 light:border-slate-200 shadow-sm space-y-6">
+          
+          <div class="flex items-center justify-between border-b border-slate-800 light:border-slate-200 pb-3">
+            <h3 class="text-sm font-bold text-slate-100 light:text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-purple-400"></i>
+              <span>Live Simulation Visual Analytics</span>
+            </h3>
+            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">12-Week Horizon</span>
+          </div>
+
+          <!-- Chart 1: Time Allocation Donut Chart -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="text-xs font-semibold text-slate-300 light:text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-chart-pie text-purple-400"></i>
+                <span>Weekly Time Distribution (% of 40h)</span>
+              </h4>
+              <span id="chart-alloc-status" class="text-[10px] text-slate-400 font-mono">40h Total</span>
+            </div>
+            <div class="h-56 relative">
+              <canvas id="chartAllocation"></canvas>
+            </div>
+          </div>
+
+          <!-- Grid for Trajectory & Strategy Radar -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            
+            <!-- Chart 2: 12-Week Cumulative Trajectory Line Chart -->
+            <div>
+              <h4 class="text-xs font-semibold text-slate-300 light:text-slate-700 mb-2 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-trend-up text-cyan-400"></i>
+                <span>12-Week Progress Trajectory</span>
+              </h4>
+              <div class="h-56 relative">
+                <canvas id="chartTrajectory"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 3: Strategy Alignment Radar -->
+            <div>
+              <h4 class="text-xs font-semibold text-slate-300 light:text-slate-700 mb-2 flex items-center gap-1.5">
+                <i class="fa-solid fa-bullseye text-emerald-400"></i>
+                <span>Current vs Strategy Benchmark</span>
+              </h4>
+              <div class="h-56 relative">
+                <canvas id="chartRadar"></canvas>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Automated Key Trade-Offs Section -->
+        <div class="bg-slate-900/90 light:bg-white p-5 rounded-2xl border border-slate-800 light:border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 light:border-slate-200 pb-3">
+            <h3 class="text-sm font-bold text-slate-100 light:text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-brain text-purple-400"></i>
+              <span>Automated Key Trade-Offs & Insights</span>
+            </h3>
+            <span class="text-[10px] bg-purple-500/20 text-purple-300 light:text-purple-700 px-2 py-0.5 rounded font-mono">Dynamic Analysis</span>
+          </div>
+
+          <div id="tradeoffs-container" class="space-y-2.5 text-xs">
+            <!-- Dynamic Trade-off Bullets Inserted Here -->
+          </div>
+        </div>
+
+        <!-- Decision Snapshot Summary Card -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/40 light:from-white light:to-purple-50/50 p-6 rounded-2xl border border-purple-500/30 light:border-purple-200 shadow-xl space-y-5">
+          
+          <div class="flex items-center justify-between border-b border-purple-500/20 pb-3">
+            <div class="flex items-center space-x-2">
+              <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                <i class="fa-solid fa-clipboard-check"></i>
+              </div>
+              <h3 class="text-base font-bold text-slate-100 light:text-slate-800">12-Week Decision Snapshot</h3>
+            </div>
+            <span id="snapshot-verdict-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              Balanced Strategy
+            </span>
+          </div>
+
+          <!-- Summary Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            
+            <div class="bg-slate-800/40 light:bg-white p-3 rounded-xl border border-slate-700/50 light:border-slate-200">
+              <span class="text-slate-400 light:text-slate-500 block text-[10px]">Total 12-Wk Investment</span>
+              <span id="snap-total-hrs" class="text-base font-extrabold text-slate-100 light:text-slate-800">480 hrs</span>
+            </div>
+
+            <div class="bg-slate-800/40 light:bg-white p-3 rounded-xl border border-slate-700/50 light:border-slate-200">
+              <span class="text-slate-400 light:text-slate-500 block text-[10px]">Technical DSA Readiness</span>
+              <span id="snap-dsa-status" class="text-base font-extrabold text-cyan-400">0%</span>
+            </div>
+
+            <div class="bg-slate-800/40 light:bg-white p-3 rounded-xl border border-slate-700/50 light:border-slate-200">
+              <span class="text-slate-400 light:text-slate-500 block text-[10px]">Portfolio Depth</span>
+              <span id="snap-portfolio-status" class="text-base font-extrabold text-emerald-400">0%</span>
+            </div>
+
+            <div class="bg-slate-800/40 light:bg-white p-3 rounded-xl border border-slate-700/50 light:border-slate-200">
+              <span class="text-slate-400 light:text-slate-500 block text-[10px]">Quality Pipeline Leads</span>
+              <span id="snap-opps-count" class="text-base font-extrabold text-amber-400">0 leads</span>
+            </div>
+
+          </div>
+
+          <!-- Strategic Verdict Summary Box -->
+          <div class="bg-slate-800/60 light:bg-slate-100 p-4 rounded-xl border border-slate-700/60 light:border-slate-200 text-xs space-y-1.5">
+            <h5 class="font-bold text-purple-300 light:text-purple-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-gavel text-purple-400"></i>
+              <span>Strategic Verdict & Recommended Actions</span>
+            </h5>
+            <p id="snapshot-summary-text" class="text-slate-300 light:text-slate-700 leading-relaxed">
+              Your weekly time distribution provides a solid foundation for your chosen target strategy.
+            </p>
+          </div>
+
+          <!-- Mandatory Simulation Disclaimer -->
+          <p class="text-[10px] text-slate-500 light:text-slate-400 italic text-center pt-2 border-t border-slate-800/60 light:border-slate-200">
+            ⚠️ <strong>Simulation Disclaimer:</strong> This tool is an illustrative decision simulator based on generalized developer hiring heuristics. Real career outcomes depend on execution quality, existing experience, personal networking, and macro market conditions.
+          </p>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- JavaScript Simulation & Interactive Logic -->
+  <script>
+    /* Global Application State */
+    const state = {
+      theme: 'dark',
+      targetStrategy: 'general', // 'startup', 'bigtech', 'general'
+      autoCap: true,
+      weeklyBudget: 40,
+      sliders: {
+        dsa: 12,        // DSA & Core Fundamentals
+        portfolio: 16,  // Portfolio & Practical Skills
+        apps: 12        // Targeted Applications & Networking
+      },
+      savedScenarios: []
+    };
+
+    /* Strategy Benchmarks & Weightings */
+    const STRATEGIES = {
+      startup: {
+        name: "Startup / Product Company",
+        benchmarks: { dsa: 8, portfolio: 20, apps: 12 }, // 20% DSA, 50% Portfolio, 30% Apps
+        dsaWeight: 0.8,
+        portfolioWeight: 1.25,
+        appsWeight: 1.1,
+        dsaMaxHrs: 120,      // Total 12-wk hours for 100%
+        portfolioMaxHrs: 180, // Total 12-wk hours for 100%
+        oppConversionBase: 0.22 // High portfolio conversion
+      },
+      bigtech: {
+        name: "Big Tech / DSA-Focused",
+        benchmarks: { dsa: 20, portfolio: 8, apps: 12 }, // 50% DSA, 20% Portfolio, 30% Apps
+        dsaWeight: 1.3,
+        portfolioWeight: 0.75,
+        appsWeight: 1.0,
+        dsaMaxHrs: 210,      // Need deep DSA hours
+        portfolioMaxHrs: 120,
+        oppConversionBase: 0.18 // Requires OA clear rate
+      },
+      general: {
+        name: "General Job Search",
+        benchmarks: { dsa: 13, portfolio: 13, apps: 14 }, // Balanced ~33%
+        dsaWeight: 1.0,
+        portfolioWeight: 1.0,
+        appsWeight: 1.0,
+        dsaMaxHrs: 160,
+        portfolioMaxHrs: 160,
+        oppConversionBase: 0.20
+      }
+    };
+
+    /* Chart instances */
+    let chartAlloc = null;
+    let chartTraj = null;
+    let chartRadar = null;
+
+    /* On Window Load */
+    window.onload = function () {
+      initEventListeners();
+      initCharts();
+      updateAll();
+    };
+
+    function initEventListeners() {
+      // Slider Listeners
+      ['dsa', 'portfolio', 'apps'].forEach(key => {
+        const slider = document.getElementById(`slider-${key}`);
+        if (slider) {
+          slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            
+            if (state.autoCap) {
+              enforceAutoCap(key, val);
+            } else {
+              state.sliders[key] = val;
+            }
+            updateAll();
+          });
+        }
+      });
+
+      // Auto-Cap toggle
+      document.getElementById('toggle-autocap').addEventListener('change', (e) => {
+        state.autoCap = e.target.checked;
+        if (state.autoCap) {
+          autoBalanceHours();
+        }
+        updateAll();
+      });
+
+      // Theme toggle
+      document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
+
+      // Reset Button
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        state.sliders = { dsa: 12, portfolio: 16, apps: 12 };
+        document.getElementById('slider-dsa').value = 12;
+        document.getElementById('slider-portfolio').value = 16;
+        document.getElementById('slider-apps').value = 12;
+        updateAll();
+      });
+    }
+
+    /* Auto-Cap Logic so sliders don't exceed 40 without user intention */
+    function enforceAutoCap(changedKey, newVal) {
+      state.sliders[changedKey] = newVal;
+      const keys = ['dsa', 'portfolio', 'apps'];
+      const otherKeys = keys.filter(k => k !== changedKey);
+      
+      let currentTotal = state.sliders.dsa + state.sliders.portfolio + state.sliders.apps;
+      if (currentTotal > state.weeklyBudget) {
+        const excess = currentTotal - state.weeklyBudget;
+        let otherSum = state.sliders[otherKeys[0]] + state.sliders[otherKeys[1]];
+        
+        if (otherSum > 0) {
+          otherKeys.forEach(k => {
+            const ratio = state.sliders[k] / otherSum;
+            state.sliders[k] = Math.max(0, Math.round(state.sliders[k] - (excess * ratio)));
+            document.getElementById(`slider-${k}`).value = state.sliders[k];
+          });
+        } else {
+          state.sliders[changedKey] = state.weeklyBudget;
+          document.getElementById(`slider-${changedKey}`).value = state.weeklyBudget;
+        }
+      }
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        html.classList.add('light');
+        state.theme = 'light';
+      } else {
+        html.classList.remove('light');
+        html.classList.add('dark');
+        state.theme = 'dark';
+      }
+      updateChartColors();
+    }
+
+    function setStrategy(stratKey) {
+      state.targetStrategy = stratKey;
+      
+      // Update UI button rings
+      ['startup', 'bigtech', 'general'].forEach(key => {
+        const btn = document.getElementById(`strat-btn-${key}`);
+        if (key === stratKey) {
+          btn.classList.add('strategy-card-selected');
+        } else {
+          btn.classList.remove('strategy-card-selected');
+        }
+      });
+
+      updateAll();
+    }
+
+    function calculateMetrics() {
+      const s = state.sliders;
+      const strat = STRATEGIES[state.targetStrategy];
+
+      // Weekly Hours Allocated
+      const totalWeeklyAllocated = s.dsa + s.portfolio + s.apps;
+      const overallocation = Math.max(0, totalWeeklyAllocated - state.weeklyBudget);
+
+      // 12-Week Total Hours
+      const totalDsaHrs = s.dsa * 12;
+      const totalPortfolioHrs = s.portfolio * 12;
+      const totalAppsHrs = s.apps * 12;
+      const totalHours12Wks = totalWeeklyAllocated * 12;
+
+      // Technical Preparation Score (0-100%)
+      const dsaRawScore = (totalDsaHrs / strat.dsaMaxHrs) * 100 * strat.dsaWeight;
+      const dsaScore = Math.min(100, Math.round(dsaRawScore));
+
+      // Portfolio Progress Score (0-100%)
+      const portfolioRawScore = (totalPortfolioHrs / strat.portfolioMaxHrs) * 100 * strat.portfolioWeight;
+      const portfolioScore = Math.min(100, Math.round(portfolioRawScore));
+
+      // High-Quality Opportunities Generated (Leads count in 12 weeks)
+      // Quality multiplier depends on portfolio/DSA synergy
+      let qualityMultiplier = strat.oppConversionBase;
+      if (state.targetStrategy === 'startup' && portfolioScore > 60) qualityMultiplier *= 1.35;
+      if (state.targetStrategy === 'bigtech' && dsaScore > 60) qualityMultiplier *= 1.40;
+
+      const oppsTotal = Math.round(totalAppsHrs * qualityMultiplier);
+      const oppsPerWk = (oppsTotal / 12).toFixed(1);
+
+      // Strategy Fit / Alignment Score (0-100%)
+      // Calculate deviation from chosen strategy benchmark
+      const bm = strat.benchmarks;
+      const diffDsa = Math.abs(s.dsa - bm.dsa);
+      const diffPort = Math.abs(s.portfolio - bm.portfolio);
+      const diffApps = Math.abs(s.apps - bm.apps);
+      const totalDiff = diffDsa + diffPort + diffApps;
+      
+      const balanceScore = Math.max(0, Math.min(100, Math.round(100 - (totalDiff * 2.5))));
+
+      let balanceLabel = "Optimal Fit";
+      if (balanceScore < 50) balanceLabel = "Misaligned";
+      else if (balanceScore < 75) balanceLabel = "Moderate Fit";
+
+      return {
+        totalWeeklyAllocated,
+        overallocation,
+        totalDsaHrs,
+        totalPortfolioHrs,
+        totalAppsHrs,
+        totalHours12Wks,
+        dsaScore,
+        portfolioScore,
+        oppsTotal,
+        oppsPerWk,
+        balanceScore,
+        balanceLabel
+      };
+    }
+
+    function updateAll() {
+      const s = state.sliders;
+      const m = calculateMetrics();
+
+      // Update Slider Display Text
+      document.getElementById('val-dsa').innerText = `${s.dsa} hrs/wk`;
+      document.getElementById('val-portfolio').innerText = `${s.portfolio} hrs/wk`;
+      document.getElementById('val-apps').innerText = `${s.apps} hrs/wk`;
+
+      document.getElementById('dsa-12wk-sub').innerText = `${m.totalDsaHrs}h total in 12 wks`;
+      document.getElementById('portfolio-12wk-sub').innerText = `${m.totalPortfolioHrs}h total in 12 wks`;
+      document.getElementById('apps-12wk-sub').innerText = `${m.totalAppsHrs}h total in 12 wks`;
+
+      // Weekly Total Indicator
+      const pill = document.getElementById('total-allocated-pill');
+      pill.innerText = `${m.totalWeeklyAllocated} / 40 hrs`;
+      if (m.overallocation > 0) {
+        pill.className = "text-xs font-mono font-bold text-rose-400 bg-rose-500/20 px-2.5 py-1 rounded-lg border border-rose-500/40";
+      } else {
+        pill.className = "text-xs font-mono font-bold text-purple-400 light:text-purple-600 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/20";
+      }
+
+      // Over-capacity Banner Alert
+      const banner = document.getElementById('overallocation-banner');
+      if (m.overallocation > 0) {
+        banner.classList.remove('hidden');
+        document.getElementById('overallocation-msg').innerText = `You have allocated ${m.overallocation} hours beyond your 40-hour limit (${m.totalWeeklyAllocated} hrs/wk). Reduce activity hours or click Auto-Balance to maintain a realistic pace.`;
+      } else {
+        banner.classList.add('hidden');
+      }
+
+      // KPI Card 1: Weekly Hours
+      document.getElementById('kpi-hours-val').innerText = `${m.totalWeeklyAllocated} / 40h`;
+      const hoursPct = Math.min(100, Math.round((m.totalWeeklyAllocated / 40) * 100));
+      document.getElementById('kpi-hours-bar').style.width = `${hoursPct}%`;
+      
+      if (m.overallocation > 0) {
+        document.getElementById('kpi-hours-badge').innerText = `+${m.overallocation}h Over`;
+        document.getElementById('kpi-hours-badge').className = "text-[10px] px-1.5 py-0.5 rounded font-semibold bg-rose-500/20 text-rose-400";
+        document.getElementById('kpi-hours-bar').className = "bg-rose-500 h-full transition-all duration-300";
+      } else {
+        document.getElementById('kpi-hours-badge').innerText = `${hoursPct}% Used`;
+        document.getElementById('kpi-hours-badge').className = "text-[10px] px-1.5 py-0.5 rounded font-semibold bg-emerald-500/20 text-emerald-400";
+        document.getElementById('kpi-hours-bar').className = "bg-purple-500 h-full transition-all duration-300";
+      }
+
+      // KPI Card 2: DSA Tech Prep
+      document.getElementById('kpi-dsa-score').innerText = `${m.dsaScore}%`;
+      document.getElementById('kpi-dsa-hrs-total').innerText = `${m.totalDsaHrs}h total`;
+      document.getElementById('kpi-dsa-bar').style.width = `${m.dsaScore}%`;
+
+      // KPI Card 3: Portfolio Progress
+      document.getElementById('kpi-portfolio-score').innerText = `${m.portfolioScore}%`;
+      document.getElementById('kpi-portfolio-hrs-total').innerText = `${m.totalPortfolioHrs}h total`;
+      document.getElementById('kpi-portfolio-bar').style.width = `${m.portfolioScore}%`;
+
+      // KPI Card 4: Opportunities
+      document.getElementById('kpi-opps-val').innerText = `${m.oppsTotal} leads`;
+      document.getElementById('kpi-opps-rate').innerText = `~${m.oppsPerWk} / wk`;
+
+      // KPI Card 5: Strategy Fit
+      document.getElementById('kpi-balance-val').innerText = m.balanceLabel;
+      document.getElementById('kpi-balance-score').innerText = `${m.balanceScore}%`;
+      document.getElementById('kpi-balance-bar').style.width = `${m.balanceScore}%`;
+
+      // Decision Snapshot Updates
+      document.getElementById('snap-total-hrs').innerText = `${m.totalHours12Wks} hrs`;
+      document.getElementById('snap-dsa-status').innerText = `${m.dsaScore}%`;
+      document.getElementById('snap-portfolio-status').innerText = `${m.portfolioScore}%`;
+      document.getElementById('snap-opps-count').innerText = `${m.oppsTotal} leads`;
+
+      let verdictBadge = "Strategy Aligned";
+      let verdictSummary = `Your 12-week plan is well-suited for a ${STRATEGIES[state.targetStrategy].name} approach. Maintain this consistency to maximize callback quality.`;
+
+      if (m.overallocation > 0) {
+        verdictBadge = "Over-Capacity Warning";
+        verdictSummary = `Your plan requires ${m.totalWeeklyAllocated} hours/week, which exceeds your 40-hour bandwidth. Reduce activities to avoid burnout during live technical interviews.`;
+      } else if (m.balanceScore < 55) {
+        verdictBadge = "Strategy Mismatch";
+        verdictSummary = `You selected ${STRATEGIES[state.targetStrategy].name}, but your slider time allocation is heavily tilted elsewhere. Aligning sliders will improve expected outcomes.`;
+      }
+
+      document.getElementById('snapshot-verdict-badge').innerText = verdictBadge;
+      document.getElementById('snapshot-summary-text').innerText = verdictSummary;
+
+      // Update Trade-off bullets
+      generateTradeoffs(m);
+
+      // Update Charts
+      updateCharts(m);
+    }
+
+    function generateTradeoffs(m) {
+      const s = state.sliders;
+      const stratKey = state.targetStrategy;
+      const container = document.getElementById('tradeoffs-container');
+      const items = [];
+
+      if (m.overallocation > 0) {
+        items.push({
+          type: 'danger',
+          icon: 'fa-triangle-exclamation',
+          title: 'Burnout & Fatigue Warning',
+          text: `You have allocated ${m.totalWeeklyAllocated} hours/week. Operating above your 40h limit leads to fatigue during technical interviews and lower code quality.`
+        });
+      }
+
+      if (stratKey === 'bigtech' && s.dsa < 15) {
+        items.push({
+          type: 'warning',
+          icon: 'fa-code',
+          title: 'Under-investing in DSA for Big Tech',
+          text: `Targeting Big Tech with only ${s.dsa} hrs/wk of DSA (${m.totalDsaHrs}h total over 12 wks) creates a high risk of failing Online Assessments (OAs) and live coding rounds.`
+        });
+      }
+
+      if (stratKey === 'startup' && s.portfolio < 15) {
+        items.push({
+          type: 'warning',
+          icon: 'fa-cubes',
+          title: 'Low Portfolio Depth for Startups',
+          text: `Startups prioritize production-ready framework skills. Allocating only ${s.portfolio} hrs/wk to portfolio projects yields low recruiter response without flagship project proof.`
+        });
+      }
+
+      if (s.apps >= 20 && m.portfolioScore < 45) {
+        items.push({
+          type: 'warning',
+          icon: 'fa-paper-plane',
+          title: 'High Applications vs. Moderate Portfolio Conversion',
+          text: `Submitting massive applications with moderate portfolio depth may lead to low callback rates. Shifting 4-6 hours to portfolio polish will increase response conversion.`
+        });
+      }
+
+      if (s.apps < 5) {
+        items.push({
+          type: 'info',
+          icon: 'fa-link',
+          title: 'Low Outreach Volume Risk',
+          text: `Spending under 5 hrs/wk on applications & networking restricts your top-of-funnel reach, regardless of how strong your DSA or portfolio skills become.`
+        });
+      }
+
+      if (items.length === 0 || m.balanceScore >= 80) {
+        items.push({
+          type: 'success',
+          icon: 'fa-circle-check',
+          title: 'Optimal Strategy Alignment',
+          text: `Your 40-hour weekly split is highly synchronized with your target ${STRATEGIES[stratKey].name} strategy. This creates strong synergy between preparation and job outreach.`
+        });
+      }
+
+      container.innerHTML = items.map(item => {
+        let borderCls = 'border-purple-500/30 bg-purple-500/10 text-purple-200';
+        let iconCls = 'text-purple-400';
+        if (item.type === 'danger') {
+          borderCls = 'border-rose-500/40 bg-rose-500/10 text-rose-200 light:text-rose-900';
+          iconCls = 'text-rose-400';
+        } else if (item.type === 'warning') {
+          borderCls = 'border-amber-500/40 bg-amber-500/10 text-amber-200 light:text-amber-900';
+          iconCls = 'text-amber-400';
+        } else if (item.type === 'success') {
+          borderCls = 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200 light:text-emerald-900';
+          iconCls = 'text-emerald-400';
+        } else if (item.type === 'info') {
+          borderCls = 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200 light:text-cyan-900';
+          iconCls = 'text-cyan-400';
+        }
+
+        return `
+          <div class="p-3 rounded-xl border ${borderCls} flex items-start space-x-2.5 transition">
+            <i class="fa-solid ${item.icon} ${iconCls} text-sm mt-0.5 shrink-0"></i>
+            <div>
+              <h5 class="font-bold text-xs light:text-slate-900 mb-0.5">${item.title}</h5>
+              <p class="text-[11px] opacity-90 leading-relaxed">${item.text}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function initCharts() {
+      const textColor = '#94a3b8';
+
+      // Chart 1: Time Allocation Donut
+      const ctxAlloc = document.getElementById('chartAllocation').getContext('2d');
+      chartAlloc = new Chart(ctxAlloc, {
+        type: 'doughnut',
+        data: {
+          labels: ['DSA & Core Fundamentals', 'Portfolio & Practical Skills', 'Targeted Apps & Networking'],
+          datasets: [{
+            data: [12, 16, 12],
+            backgroundColor: ['#06b6d4', '#10b981', '#f59e0b'],
+            borderWidth: 2,
+            borderColor: state.theme === 'dark' ? '#0f172a' : '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: textColor, font: { size: 11 } }
+            }
+          },
+          cutout: '65%'
+        }
+      });
+
+      // Chart 2: 12-Week Trajectory Line Chart
+      const ctxTraj = document.getElementById('chartTrajectory').getContext('2d');
+      chartTraj = new Chart(ctxTraj, {
+        type: 'line',
+        data: {
+          labels: ['Wk 0', 'Wk 2', 'Wk 4', 'Wk 6', 'Wk 8', 'Wk 10', 'Wk 12'],
+          datasets: [
+            {
+              label: 'DSA Readiness %',
+              data: [0, 15, 30, 45, 60, 75, 90],
+              borderColor: '#06b6d4',
+              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              tension: 0.3,
+              fill: false
+            },
+            {
+              label: 'Portfolio Depth %',
+              data: [0, 12, 28, 48, 65, 80, 95],
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.3,
+              fill: false
+            },
+            {
+              label: 'Quality Opportunities',
+              data: [0, 3, 7, 12, 18, 24, 30],
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              tension: 0.3,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: textColor, font: { size: 10 } } }
+          }
+        }
+      });
+
+      // Chart 3: Strategy Radar Chart
+      const ctxRadar = document.getElementById('chartRadar').getContext('2d');
+      chartRadar = new Chart(ctxRadar, {
+        type: 'radar',
+        data: {
+          labels: ['DSA Focus', 'Portfolio Focus', 'Outreach Focus'],
+          datasets: [
+            {
+              label: 'Your Current Allocation',
+              data: [12, 16, 12],
+              backgroundColor: 'rgba(139, 92, 246, 0.25)',
+              borderColor: '#8b5cf6',
+              pointBackgroundColor: '#8b5cf6'
+            },
+            {
+              label: 'Strategy Benchmark',
+              data: [13, 13, 14],
+              backgroundColor: 'rgba(148, 163, 184, 0.15)',
+              borderColor: '#94a3b8',
+              borderDash: [4, 4],
+              pointBackgroundColor: '#94a3b8'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(255,255,255,0.1)' },
+              grid: { color: 'rgba(255,255,255,0.1)' },
+              pointLabels: { color: textColor, font: { size: 10 } },
+              ticks: { display: false, max: 25 }
+            }
+          },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: textColor, font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function updateCharts(m) {
+      if (!chartAlloc || !chartTraj || !chartRadar) return;
+
+      const s = state.sliders;
+      const strat = STRATEGIES[state.targetStrategy];
+
+      // Update Donut Data
+      chartAlloc.data.datasets[0].data = [s.dsa, s.portfolio, s.apps];
+      chartAlloc.update();
+
+      // Update 12-Week Trajectory Data
+      const weeks = [0, 2, 4, 6, 8, 10, 12];
+      chartTraj.data.datasets[0].data = weeks.map(w => Math.min(100, Math.round((m.dsaScore / 12) * w)));
+      chartTraj.data.datasets[1].data = weeks.map(w => Math.min(100, Math.round((m.portfolioScore / 12) * w)));
+      chartTraj.data.datasets[2].data = weeks.map(w => Math.round((m.oppsTotal / 12) * w));
+      chartTraj.update();
+
+      // Update Radar Comparison Data
+      const bm = strat.benchmarks;
+      chartRadar.data.datasets[0].data = [s.dsa, s.portfolio, s.apps];
+      chartRadar.data.datasets[1].label = `${strat.name} Benchmark`;
+      chartRadar.data.datasets[1].data = [bm.dsa, bm.portfolio, bm.apps];
+      chartRadar.update();
+    }
+
+    function updateChartColors() {
+      const isDark = state.theme === 'dark';
+      const textColor = isDark ? '#94a3b8' : '#475569';
+      const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+
+      if (chartAlloc) {
+        chartAlloc.data.datasets[0].borderColor = isDark ? '#0f172a' : '#ffffff';
+        chartAlloc.options.plugins.legend.labels.color = textColor;
+        chartAlloc.update();
+      }
+
+      if (chartTraj) {
+        chartTraj.options.scales.x.ticks.color = textColor;
+        chartTraj.options.scales.x.grid.color = gridColor;
+        chartTraj.options.scales.y.ticks.color = textColor;
+        chartTraj.options.scales.y.grid.color = gridColor;
+        chartTraj.options.plugins.legend.labels.color = textColor;
+        chartTraj.update();
+      }
+
+      if (chartRadar) {
+        chartRadar.options.scales.r.pointLabels.color = textColor;
+        chartRadar.options.scales.r.grid.color = gridColor;
+        chartRadar.options.scales.r.angleLines.color = gridColor;
+        chartRadar.options.plugins.legend.labels.color = textColor;
+        chartRadar.update();
+      }
+    }
+
+    function autoBalanceHours() {
+      const currentSum = state.sliders.dsa + state.sliders.portfolio + state.sliders.apps;
+      if (currentSum === 0) {
+        state.sliders = { dsa: 13, portfolio: 14, apps: 13 };
+      } else {
+        const ratio = 40 / currentSum;
+        state.sliders.dsa = Math.round(state.sliders.dsa * ratio);
+        state.sliders.portfolio = Math.round(state.sliders.portfolio * ratio);
+        state.sliders.apps = 40 - (state.sliders.dsa + state.sliders.portfolio);
+      }
+
+      document.getElementById('slider-dsa').value = state.sliders.dsa;
+      document.getElementById('slider-portfolio').value = state.sliders.portfolio;
+      document.getElementById('slider-apps').value = state.sliders.apps;
+      updateAll();
+    }
+
+    function whatIfAlignStrategy() {
+      const bm = STRATEGIES[state.targetStrategy].benchmarks;
+      state.sliders = { ...bm };
+      document.getElementById('slider-dsa').value = bm.dsa;
+      document.getElementById('slider-portfolio').value = bm.portfolio;
+      document.getElementById('slider-apps').value = bm.apps;
+      updateAll();
+    }
+
+    function whatIfEqualSplit() {
+      state.sliders = { dsa: 13, portfolio: 13, apps: 14 };
+      document.getElementById('slider-dsa').value = 13;
+      document.getElementById('slider-portfolio').value = 13;
+      document.getElementById('slider-apps').value = 14;
+      updateAll();
+    }
+
+    function whatIfDSAHeavy() {
+      state.sliders = { dsa: 24, portfolio: 8, apps: 8 };
+      document.getElementById('slider-dsa').value = 24;
+      document.getElementById('slider-portfolio').value = 8;
+      document.getElementById('slider-apps').value = 8;
+      updateAll();
+    }
+
+    function whatIfPortfolioHeavy() {
+      state.sliders = { dsa: 8, portfolio: 24, apps: 8 };
+      document.getElementById('slider-dsa').value = 8;
+      document.getElementById('slider-portfolio').value = 24;
+      document.getElementById('slider-apps').value = 8;
+      updateAll();
+    }
+
+    function saveCurrentScenario() {
+      if (state.savedScenarios.length >= 3) {
+        alert("Maximum 3 scenarios saved. Delete an existing scenario to save a new one.");
+        return;
+      }
+
+      const name = prompt("Enter a name for this scenario:", `Scenario ${state.savedScenarios.length + 1}`);
+      if (!name) return;
+
+      const m = calculateMetrics();
+      const snapshot = {
+        id: Date.now(),
+        name,
+        strategy: state.targetStrategy,
+        sliders: { ...state.sliders },
+        metrics: { ...m }
+      };
+
+      state.savedScenarios.push(snapshot);
+      renderSavedScenarios();
+    }
+
+    function renderSavedScenarios() {
+      const container = document.getElementById('scenarios-grid');
+      if (state.savedScenarios.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-4 text-center text-xs text-slate-500 border-2 border-dashed border-slate-800 light:border-slate-200 rounded-xl">
+            Save up to 3 scenarios to compare your 12-week outcomes side-by-side.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = state.savedScenarios.map((sc) => {
+        return `
+          <div class="bg-slate-800/80 light:bg-slate-50 p-3 rounded-xl border border-slate-700/80 light:border-slate-200 flex flex-col justify-between space-y-2">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <h4 class="font-bold text-xs text-purple-300 light:text-purple-700 truncate">${sc.name}</h4>
+                <button onclick="deleteScenario(${sc.id})" class="text-rose-400 hover:text-rose-300 text-xs">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <div class="space-y-1 text-[11px] text-slate-300 light:text-slate-700">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">DSA/Port/Apps:</span>
+                  <span class="font-mono font-semibold">${sc.sliders.dsa}/${sc.sliders.portfolio}/${sc.sliders.apps}h</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">DSA Readiness:</span>
+                  <span class="font-mono font-semibold text-cyan-400">${sc.metrics.dsaScore}%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Portfolio Depth:</span>
+                  <span class="font-mono font-semibold text-emerald-400">${sc.metrics.portfolioScore}%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Pipeline Leads:</span>
+                  <span class="font-mono font-semibold text-amber-400">${sc.metrics.oppsTotal}</span>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="restoreScenario(${sc.id})" class="w-full py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 light:text-purple-800 font-semibold text-[11px] rounded-lg transition border border-purple-500/30">
+              Apply Scenario
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function restoreScenario(id) {
+      const sc = state.savedScenarios.find(s => s.id === id);
+      if (!sc) return;
+
+      setStrategy(sc.strategy);
+      state.sliders = { ...sc.sliders };
+      document.getElementById('slider-dsa').value = sc.sliders.dsa;
+      document.getElementById('slider-portfolio').value = sc.sliders.portfolio;
+      document.getElementById('slider-apps').value = sc.sliders.apps;
+      updateAll();
+    }
+
+    function deleteScenario(id) {
+      state.savedScenarios = state.savedScenarios.filter(s => s.id !== id);
+      renderSavedScenarios();
+    }
+  </script>
+
+</body>
+</html>
